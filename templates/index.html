@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        h1, form, #chart_div_eur, #chart_div_usd, #footer {
+            width: 80%;
+            max-width: 800px;
+            margin-bottom: 20px;
+        }
+
+        #footer {
+            text-align: center;
+            color: #555;
+        }
+    </style>
+    <script type="text/javascript">
+        google.charts.load('current', {'packages':['corechart']});
+        google.charts.setOnLoadCallback(drawCharts);
+
+        function drawCharts() 
+        {
+            var formData = new FormData();
+            var dateRange = {
+                'start_date': document.getElementById('start_date').value,
+                'end_date': document.getElementById('end_date').value
+            };
+            formData.append('date_range', JSON.stringify(dateRange));
+
+            fetch('/charts', 
+            {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => 
+            {
+                console.log('Received data:', data);
+
+                if (data.date_time.length === 0) {
+                    console.error('No data received or invalid data format');
+                    return;
+                }
+
+                console.log('date_time:', data.date_time);
+                console.log('EURbuy:', data.EURbuy);
+                console.log('EURsell:', data.EURsell);
+                console.log('USDbuy:', data.USDbuy);
+                console.log('USDsell:', data.USDsell);
+
+                function drawChart(divId, buyLabel, sellLabel, title) 
+                {
+                    var chartData = [['Date Time', buyLabel, sellLabel]];
+                    for (var i = 0; i < data.date_time.length; i++) 
+                    {
+                        chartData.push([
+                            data.date_time[i],
+                            parseFloat(data[buyLabel][i]),
+                            parseFloat(data[sellLabel][i]),
+                        ]);
+                    }
+
+                    var chartDataTable = google.visualization.arrayToDataTable(chartData);
+
+                    var options = 
+                    {
+                        title: title,
+                        curveType: 'function',
+                        legend: { position: 'bottom' }
+                    };
+
+                    var chart = new google.visualization.LineChart(document.getElementById(divId));
+                    chart.draw(chartDataTable, options);
+                }
+
+                drawChart('chart_div_eur', 'EURbuy', 'EURsell', 'EUR Exchange Rates');
+                drawChart('chart_div_usd', 'USDbuy', 'USDsell', 'USD Exchange Rates');
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <h1>Currency Exchange Rate Charts</h1>
+    <form>
+        <label for="start_date">Start Date:</label>
+        <input type="date" id="start_date" name="start_date" required>
+
+        <label for="end_date">End Date:</label>
+        <input type="date" id="end_date" name="end_date" required>
+
+        <button type="button" onclick="drawCharts()">Generate Charts</button>
+    </form>
+
+    <div id="chart_div_eur" style="width: 100%; height: 500px;"></div>
+    <div id="chart_div_usd" style="width: 100%; height: 500px;"></div>
+
+    <div id="footer">
+        <hr><br/>Adrian Lesniak nr.indeksu: 154256
+    </div>
+</body>
+</html>
