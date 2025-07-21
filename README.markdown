@@ -26,6 +26,12 @@ _A Flask web application that displays historical EUR and USD buy/sell exchange 
 
 **FlaskFX Visualizer** is a web application built with the **Flask** Python microframework, designed for visualizing historical currency exchange rates. Developed by Adrian Lesniak, it reads EUR and USD buy/sell rate data from a local CSV file (`history.csv`). Users can interact with a simple web interface to select a specific date range to filter the data. The application then processes this data using the **Pandas** library and serves the filtered, formatted data as a JSON response via an API endpoint. This JSON data is intended to be consumed by a frontend charting library (e.g., Chart.js, Plotly.js, D3.js, assumed to be implemented in `templates/index.html`) to render interactive charts of the exchange rates over the selected period.
 
+<br> 
+<p align="center">
+  <img src="screenshots/1.gif" width="90%">
+</p>
+<br>
+
 ## ✨ Key Features
 
 *   📊 **Historical Data Visualization**:
@@ -44,9 +50,15 @@ _A Flask web application that displays historical EUR and USD buy/sell exchange 
 
 ## 🖼️ Screenshots (Conceptual)
 
-**Coming soon!**
+_Screenshots of: the homepage with the date range selection form, and an example of the interactive charts displaying EUR/USD buy/sell rates after data is filtered and rendered by a frontend charting library._
 
-_This section would ideally show screenshots of: the homepage with the date range selection form, and an example of the interactive charts displaying EUR/USD buy/sell rates after data is filtered and rendered by a frontend charting library._
+<p align="center">
+  <img src="screenshots\1.jpg" width="300"/>
+  <img src="screenshots\2.jpg" width="300"/>
+  <img src="screenshots\3.jpg" width="300"/>
+  <img src="screenshots\4.jpg" width="300"/>
+  <img src="screenshots\5.jpg" width="300"/>
+</p>
 
 ## ⚙️ System Requirements & Dependencies
 
