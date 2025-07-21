@@ -3,112 +3,607 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Exchange Rates - Visualization</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/style.css">
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <style>
         body {
+            background: #f7fafc;
+            color: #2d3748;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px #b2f0ff44;
+            padding: 32px 24px 24px 24px;
+        }
+        .menu-desc {
+            background: #e3f6fc;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+            border: 2px solid #b2f0ff;
+            color: #0077b6;
+            font-size: 1.1em;
+        }
+        .author {
+            color: #00b4d8;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+        .stars {
+            color: #ffd700;
+            font-size: 1.3em;
+            letter-spacing: 2px;
+        }
+        h1 {
+            color: #0096c7;
+            margin-bottom: 0.2em;
+        }
+        hr {
+            border: none;
+            border-top: 2px dashed #00b4d8;
+            margin: 24px 0 16px 0;
+        }
+        label {
+            color: #0077b6;
+            font-weight: 500;
+        }
+        input, button {
+            border-radius: 6px;
+            border: 1px solid #b2f0ff;
+            padding: 6px 10px;
+            margin: 4px 0 12px 0;
+            font-size: 1em;
+        }
+        button {
+            background: #48cae4;
+            color: #fff;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #00b4d8;
+        }
+        .icon {
+            margin-right: 6px;
+        }
+        .success, .error {
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        .success {
+            background: #d1f7c4;
+            color: #2e7d32;
+        }
+        .error {
+            background: #ffe0e0;
+            color: #c62828;
+        }
+        .back-menu {
+            margin-top: 18px;
+            color: #0096c7;
+            cursor: pointer;
+            font-size: 1.1em;
+            text-decoration: underline;
+        }
+        .form-section {
+            background: #e3f6fc;
+            border-radius: 10px;
+            padding: 18px 12px 10px 12px;
+            margin-bottom: 24px;
+            border: 1px solid #b2f0ff;
+        }
+        .filter-section {
+            background: #e3f6fc;
+            border-radius: 10px;
+            padding: 18px 12px 10px 12px;
+            margin-bottom: 24px;
+            border: 1px solid #b2f0ff;
+            box-shadow: 0 2px 8px #b2f0ff22;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px #b2f0ff22;
+        }
+        .data-table th, .data-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e3f6fc;
+        }
+        .data-table th {
+            background: #00b4d8;
+            color: #fff;
+            font-weight: bold;
+        }
+        .data-table tr:hover {
+            background: #f0fbff;
+        }
+        .pagination {
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            text-align: center;
+            margin-top: 16px;
+            gap: 8px;
         }
-
-        h1, form, #chart_div_eur, #chart_div_usd, #footer {
-            width: 80%;
-            max-width: 800px;
-            margin-bottom: 20px;
+        .pagination button {
+            padding: 4px 8px;
+            margin: 0;
+            font-size: 0.9em;
         }
-
-        #footer {
-            text-align: center;
-            color: #555;
+        .pagination span {
+            color: #0077b6;
+            font-weight: bold;
+        }
+        .export-options {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .export-options button {
+            flex: 1;
+            font-size: 0.9em;
         }
     </style>
     <script type="text/javascript">
         google.charts.load('current', {'packages':['corechart']});
-        google.charts.setOnLoadCallback(drawCharts);
-
-        function drawCharts() 
-        {
+        
+        function drawCharts() {
             var formData = new FormData();
             var dateRange = {
                 'start_date': document.getElementById('start_date').value,
-                'end_date': document.getElementById('end_date').value
+                'end_date': document.getElementById('end_date').value,
+                'currency': document.getElementById('currency_filter').value,
+                'min_value': document.getElementById('min_value').value,
+                'max_value': document.getElementById('max_value').value,
+                'sort_by': document.getElementById('sort_by').value,
+                'sort_order': document.getElementById('sort_order').value
             };
             formData.append('date_range', JSON.stringify(dateRange));
-
-            fetch('/charts', 
-            {
+            fetch('/charts', {
                 method: 'POST',
                 body: formData
             })
             .then(response => response.json())
-            .then(data => 
-            {
-                console.log('Received data:', data);
-
-                if (data.date_time.length === 0) {
-                    console.error('No data received or invalid data format');
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('chart_error').innerHTML = '<div class="error">' + data.error + '</div>';
+                    document.getElementById('chart_div_eur').innerHTML = '';
+                    document.getElementById('chart_div_usd').innerHTML = '';
+                    document.getElementById('alert_box').innerHTML = '';
                     return;
                 }
-
-                console.log('date_time:', data.date_time);
-                console.log('EURbuy:', data.EURbuy);
-                console.log('EURsell:', data.EURsell);
-                console.log('USDbuy:', data.USDbuy);
-                console.log('USDsell:', data.USDsell);
-
-                function drawChart(divId, buyLabel, sellLabel, title) 
-                {
+                document.getElementById('chart_error').innerHTML = '';
+                var chartType = document.getElementById('chart_type').value;
+                var alertEUR = parseFloat(document.getElementById('alert_eurbuy').value);
+                var alertUSD = parseFloat(document.getElementById('alert_usdbuy').value);
+                var alertMessages = [];
+                // --- WYKRESY ---
+                function drawChart(divId, buyLabel, sellLabel, title) {
                     var chartData = [['Date Time', buyLabel, sellLabel]];
-                    for (var i = 0; i < data.date_time.length; i++) 
-                    {
+                    for (var i = 0; i < data.date_time.length; i++) {
                         chartData.push([
                             data.date_time[i],
                             parseFloat(data[buyLabel][i]),
                             parseFloat(data[sellLabel][i]),
                         ]);
+                        // ALERTY
+                        if (buyLabel === 'EURbuy' && !isNaN(alertEUR) && parseFloat(data[buyLabel][i]) >= alertEUR) {
+                            alertMessages.push('EUR Buy reached ' + data[buyLabel][i] + ' at ' + data.date_time[i]);
+                        }
+                        if (buyLabel === 'USDbuy' && !isNaN(alertUSD) && parseFloat(data[buyLabel][i]) >= alertUSD) {
+                            alertMessages.push('USD Buy reached ' + data[buyLabel][i] + ' at ' + data.date_time[i]);
+                        }
                     }
-
                     var chartDataTable = google.visualization.arrayToDataTable(chartData);
-
-                    var options = 
-                    {
+                    var options = {
                         title: title,
                         curveType: 'function',
-                        legend: { position: 'bottom' }
+                        legend: { position: 'bottom' },
+                        colors: ['#0096c7', '#ffd700'],
+                        backgroundColor: '#f7fafc',
+                        titleTextStyle: {color: '#0077b6', fontSize: 20, bold: true},
                     };
-
-                    var chart = new google.visualization.LineChart(document.getElementById(divId));
-                    chart.draw(chartDataTable, options);
+                    if (chartType === 'bar') {
+                        var chart = new google.visualization.ColumnChart(document.getElementById(divId));
+                        chart.draw(chartDataTable, options);
+                    } else if (chartType === 'average') {
+                        // Draw average line chart
+                        var avgData = [['Date Time', 'Average']];
+                        for (var i = 0; i < data.date_time.length; i++) {
+                            var avg = (parseFloat(data[buyLabel][i]) + parseFloat(data[sellLabel][i])) / 2;
+                            avgData.push([data.date_time[i], avg]);
+                        }
+                        var avgTable = google.visualization.arrayToDataTable(avgData);
+                        var avgOptions = Object.assign({}, options, {title: title + ' (Average)', series: {0: {color: '#0096c7'}}});
+                        var chart = new google.visualization.LineChart(document.getElementById(divId));
+                        chart.draw(avgTable, avgOptions);
+                    } else if (chartType === 'candlestick') {
+                        // Candlestick chart expects [date, low, open, close, high]
+                        var candleData = [['Date', 'Low', 'Open', 'Close', 'High']];
+                        for (var i = 0; i < data.date_time.length; i++) {
+                            var open = parseFloat(data[buyLabel][i]);
+                            var close = parseFloat(data[sellLabel][i]);
+                            var low = Math.min(open, close) * 0.98;
+                            var high = Math.max(open, close) * 1.02;
+                            candleData.push([data.date_time[i], low, open, close, high]);
+                        }
+                        var candleTable = google.visualization.arrayToDataTable(candleData, false);
+                        var candleOptions = Object.assign({}, options, {title: title + ' (Candlestick)'});
+                        var chart = new google.visualization.CandlestickChart(document.getElementById(divId));
+                        chart.draw(candleTable, candleOptions);
+                    } else {
+                        var chart = new google.visualization.LineChart(document.getElementById(divId));
+                        chart.draw(chartDataTable, options);
+                    }
                 }
-
                 drawChart('chart_div_eur', 'EURbuy', 'EURsell', 'EUR Exchange Rates');
                 drawChart('chart_div_usd', 'USDbuy', 'USDsell', 'USD Exchange Rates');
+                // ALERTY
+                if (alertMessages.length > 0) {
+                    document.getElementById('alert_box').innerHTML = '<div class="error">' + alertMessages.join('<br>') + '</div>';
+                } else {
+                    document.getElementById('alert_box').innerHTML = '';
+                }
             })
             .catch(error => {
-                console.error('Error fetching data:', error);
+                document.getElementById('chart_error').innerHTML = '<div class="error">Data fetch error!</div>';
+                document.getElementById('alert_box').innerHTML = '';
             });
         }
+        
+        function loadDataTable(page = 1) {
+            var filters = {
+                'start_date': document.getElementById('start_date').value,
+                'end_date': document.getElementById('end_date').value,
+                'currency': document.getElementById('currency_filter').value,
+                'min_value': document.getElementById('min_value').value,
+                'max_value': document.getElementById('max_value').value
+            };
+            
+            var data = {
+                'filters': filters,
+                'sort_by': document.getElementById('sort_by').value,
+                'sort_order': document.getElementById('sort_order').value,
+                'page': page,
+                'per_page': 20
+            };
+            
+            fetch('/filter', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('table_error').innerHTML = '<div class="error">' + data.error + '</div>';
+                    document.getElementById('data_table').innerHTML = '';
+                    return;
+                }
+                document.getElementById('table_error').innerHTML = '';
+                displayDataTable(data);
+            })
+            .catch(() => {
+                document.getElementById('table_error').innerHTML = '<div class="error">Connection error!</div>';
+            });
+        }
+        
+        function displayDataTable(data) {
+            var tableDiv = document.getElementById('data_table');
+            var records = data.records;
+            
+            if (records.length === 0) {
+                tableDiv.innerHTML = '<div class="success">No data matches the selected criteria.</div>';
+                return;
+            }
+            
+            var table = '<table class="data-table"><thead><tr>';
+            table += '<th>Date Time</th><th>EUR Buy</th><th>EUR Sell</th><th>USD Buy</th><th>USD Sell</th>';
+            table += '</tr></thead><tbody>';
+            
+            records.forEach(function(record) {
+                table += '<tr>';
+                table += '<td>' + record.date_time + '</td>';
+                table += '<td>' + record.EURbuy.toFixed(4) + '</td>';
+                table += '<td>' + record.EURsell.toFixed(4) + '</td>';
+                table += '<td>' + record.USDbuy.toFixed(4) + '</td>';
+                table += '<td>' + record.USDsell.toFixed(4) + '</td>';
+                table += '</tr>';
+            });
+            
+            table += '</tbody></table>';
+            
+            // Add pagination
+            if (data.total_pages > 1) {
+                table += '<div class="pagination">';
+                if (data.current_page > 1) {
+                    table += '<button onclick="loadDataTable(' + (data.current_page - 1) + ')">Previous</button>';
+                }
+                table += '<span>Page ' + data.current_page + ' of ' + data.total_pages + '</span>';
+                if (data.current_page < data.total_pages) {
+                    table += '<button onclick="loadDataTable(' + (data.current_page + 1) + ')">Next</button>';
+                }
+                table += '</div>';
+            }
+            
+            tableDiv.innerHTML = table;
+        }
+        
+        function exportData(format) {
+            var filters = {
+                'start_date': document.getElementById('start_date').value,
+                'end_date': document.getElementById('end_date').value,
+                'currency': document.getElementById('currency_filter').value,
+                'min_value': document.getElementById('min_value').value,
+                'max_value': document.getElementById('max_value').value
+            };
+            
+            var data = {
+                'format': format,
+                'filters': filters,
+                'sort_by': document.getElementById('sort_by').value,
+                'sort_order': document.getElementById('sort_order').value
+            };
+            
+            fetch('/export', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.blob();
+                } else {
+                    throw new Error('Export failed');
+                }
+            })
+            .then(blob => {
+                var url = window.URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = 'currency_data_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.' + format;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(() => {
+                document.getElementById('export_error').innerHTML = '<div class="error">Export failed!</div>';
+            });
+        }
+        
+        function addRecord(event) {
+            event.preventDefault();
+            var data = {
+                date_time: document.getElementById('add_date_time').value,
+                EURbuy: document.getElementById('add_eurbuy').value,
+                EURsell: document.getElementById('add_eursell').value,
+                USDbuy: document.getElementById('add_usdbuy').value,
+                USDsell: document.getElementById('add_usdsell').value
+            };
+            fetch('/add', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('add_result').innerHTML = '<div class="success">' + data.success + '</div>';
+                } else {
+                    document.getElementById('add_result').innerHTML = '<div class="error">' + (data.error || 'Error!') + '</div>';
+                }
+            })
+            .catch(() => {
+                document.getElementById('add_result').innerHTML = '<div class="error">Connection error!</div>';
+            });
+        }
+        
+        function backToMenu() {
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function searchTable() {
+            var searchValue = document.getElementById('search_input').value.trim().toLowerCase();
+            var table = document.querySelector('#data_table table');
+            if (!table) return;
+            var rows = table.querySelectorAll('tbody tr');
+            rows.forEach(function(row) {
+                var text = row.textContent.toLowerCase();
+                if (text.includes(searchValue)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        function resetSearch() {
+            document.getElementById('search_input').value = '';
+            var table = document.querySelector('#data_table table');
+            if (!table) return;
+            var rows = table.querySelectorAll('tbody tr');
+            rows.forEach(function(row) {
+                row.style.display = '';
+            });
+        }
+
+        function loadHistory() {
+            fetch('/history?n=10')
+                .then(response => response.json())
+                .then(data => {
+                    var div = document.getElementById('history_table');
+                    if (!data.history || data.history.length === 0) {
+                        div.innerHTML = '<div class="success">No history available.</div>';
+                        return;
+                    }
+                    var table = '<table class="data-table"><thead><tr>';
+                    table += '<th>Date Time</th><th>EUR Buy</th><th>EUR Sell</th><th>USD Buy</th><th>USD Sell</th></tr></thead><tbody>';
+                    data.history.forEach(function(record) {
+                        table += '<tr>';
+                        table += '<td>' + (record.date_time || '') + '</td>';
+                        table += '<td>' + (record.EURbuy !== undefined ? parseFloat(record.EURbuy).toFixed(4) : '') + '</td>';
+                        table += '<td>' + (record.EURsell !== undefined ? parseFloat(record.EURsell).toFixed(4) : '') + '</td>';
+                        table += '<td>' + (record.USDbuy !== undefined ? parseFloat(record.USDbuy).toFixed(4) : '') + '</td>';
+                        table += '<td>' + (record.USDsell !== undefined ? parseFloat(record.USDsell).toFixed(4) : '') + '</td>';
+                        table += '</tr>';
+                    });
+                    table += '</tbody></table>';
+                    div.innerHTML = table;
+                })
+                .catch(() => {
+                    document.getElementById('history_table').innerHTML = '<div class="error">Error loading history!</div>';
+                });
+        }
+        window.onload = function() {
+            loadHistory();
+            // ...możesz dodać inne inicjalizacje...
+        };
     </script>
 </head>
-
 <body>
-    <h1>Currency Exchange Rate Charts</h1>
-    <form>
-        <label for="start_date">Start Date:</label>
-        <input type="date" id="start_date" name="start_date" required>
-
-        <label for="end_date">End Date:</label>
-        <input type="date" id="end_date" name="end_date" required>
-
-        <button type="button" onclick="drawCharts()">Generate Charts</button>
-    </form>
-
-    <div id="chart_div_eur" style="width: 100%; height: 500px;"></div>
-    <div id="chart_div_usd" style="width: 100%; height: 500px;"></div>
-
-    <div id="footer">
-        <hr><br/>Adrian Lesniak nr.indeksu: 154256
+    <div class="container">
+        <div class="stars">&#9733; &#9733; &#9733; &#9733; &#9733;</div>
+        <div class="author"><i class="fa-solid fa-user icon"></i>Author: Adrian Lesniak</div>
+        <div class="menu-desc">
+            <b>Program description:</b> <br>
+            The application allows you to visualize EUR and USD currency exchange rates based on historical data.<br>
+            <b>Menu options:</b><br>
+            <i class="fa-solid fa-chart-line icon"></i> Select a date range and generate charts.<br>
+            <i class="fa-solid fa-filter icon"></i> Filter and sort data by various criteria.<br>
+            <i class="fa-solid fa-download icon"></i> Export filtered data to CSV or Excel.<br>
+            <i class="fa-solid fa-plus icon"></i> Add a new record to the history.<br>
+            <i class="fa-solid fa-arrow-rotate-left icon"></i> After each operation you can return to the menu by clicking "Back to menu".<br>
+        </div>
+        <hr>
+        <h1><i class="fa-solid fa-chart-line icon"></i> Currency Exchange Rates</h1>
+        
+        <!-- Advanced Filtering and Sorting -->
+        <div class="filter-section">
+            <h3><i class="fa-solid fa-filter icon"></i> Advanced Filtering & Sorting</h3>
+            <form onsubmit="event.preventDefault(); drawCharts(); loadDataTable();">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div>
+                        <label for="start_date"><i class="fa-solid fa-calendar-day icon"></i>Start date:</label>
+                        <input type="date" id="start_date" name="start_date" required>
+                        <label for="end_date"><i class="fa-solid fa-calendar-day icon"></i>End date:</label>
+                        <input type="date" id="end_date" name="end_date" required>
+                        <label for="currency_filter"><i class="fa-solid fa-money-bill icon"></i>Currency:</label>
+                        <select id="currency_filter" name="currency_filter">
+                            <option value="">All currencies</option>
+                            <option value="EUR">EUR only</option>
+                            <option value="USD">USD only</option>
+                        </select>
+                        <label for="chart_type"><i class="fa-solid fa-chart-bar icon"></i>Chart type:</label>
+                        <select id="chart_type" name="chart_type">
+                            <option value="line">Line</option>
+                            <option value="bar">Bar</option>
+                            <option value="average">Average</option>
+                            <option value="candlestick">Candlestick</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="min_value"><i class="fa-solid fa-arrow-down icon"></i>Min value:</label>
+                        <input type="number" step="0.0001" id="min_value" name="min_value" placeholder="e.g., 3.5">
+                        <label for="max_value"><i class="fa-solid fa-arrow-up icon"></i>Max value:</label>
+                        <input type="number" step="0.0001" id="max_value" name="max_value" placeholder="e.g., 5.0">
+                        <label for="sort_by"><i class="fa-solid fa-sort icon"></i>Sort by:</label>
+                        <select id="sort_by" name="sort_by">
+                            <option value="date_time">Date</option>
+                            <option value="EURbuy">EUR Buy</option>
+                            <option value="EURsell">EUR Sell</option>
+                            <option value="USDbuy">USD Buy</option>
+                            <option value="USDsell">USD Sell</option>
+                        </select>
+                        <label for="sort_order"><i class="fa-solid fa-sort icon"></i>Sort order:</label>
+                        <select id="sort_order" name="sort_order">
+                            <option value="asc">Ascending</option>
+                            <option value="desc">Descending</option>
+                        </select>
+                        <label for="alert_eurbuy"><i class="fa-solid fa-bell icon"></i>EUR Buy alert &gt;=</label>
+                        <input type="number" step="0.0001" id="alert_eurbuy" name="alert_eurbuy" placeholder="e.g., 4.5">
+                        <label for="alert_usdbuy"><i class="fa-solid fa-bell icon"></i>USD Buy alert &gt;=</label>
+                        <input type="number" step="0.0001" id="alert_usdbuy" name="alert_usdbuy" placeholder="e.g., 4.0">
+                    </div>
+                </div>
+                <button type="submit"><i class="fa-solid fa-search icon"></i>Apply filters & generate charts</button>
+            </form>
+            <div id="chart_error"></div>
+            <div id="alert_box"></div>
+        </div>
+        
+        <!-- Charts -->
+        <div id="chart_div_eur" style="width: 100%; height: 400px;"></div>
+        <div id="chart_div_usd" style="width: 100%; height: 400px;"></div>
+        
+        <!-- Export Options -->
+        <div class="form-section">
+            <h3><i class="fa-solid fa-download icon"></i> Export Data</h3>
+            <div class="export-options">
+                <button onclick="exportData('csv')"><i class="fa-solid fa-file-csv icon"></i>Export to CSV</button>
+                <button onclick="exportData('excel')"><i class="fa-solid fa-file-excel icon"></i>Export to Excel</button>
+            </div>
+            <div id="export_error"></div>
+        </div>
+        
+        <!-- Data Table -->
+        <div class="form-section">
+            <h3><i class="fa-solid fa-table icon"></i> Data Table</h3>
+            <div style="margin-bottom: 10px;">
+                <input type="text" id="search_input" placeholder="Search date or value..." style="width: 220px; padding: 6px; border: 1px solid #b2f0ff; border-radius: 6px;">
+                <button onclick="searchTable()" style="padding: 6px 12px;"><i class="fa-solid fa-magnifying-glass icon"></i>Search</button>
+                <button onclick="resetSearch()" style="padding: 6px 12px; margin-left: 4px;"><i class="fa-solid fa-eraser icon"></i>Reset</button>
+            </div>
+            <div id="table_error"></div>
+            <div id="data_table" style="overflow-x:auto;"></div>
+        </div>
+        <!-- History Table -->
+        <div class="form-section">
+            <h3><i class="fa-solid fa-clock-rotate-left icon"></i> Change History (Last 10 Records)</h3>
+            <div id="history_table" style="overflow-x:auto;"></div>
+        </div>
+        
+        <div class="back-menu" onclick="backToMenu()"><i class="fa-solid fa-arrow-up icon"></i>Back to menu</div>
+        <hr>
+        
+        <!-- Add New Record -->
+        <h2><i class="fa-solid fa-plus icon"></i> Add new record</h2>
+        <div class="form-section">
+            <form onsubmit="addRecord(event)">
+                <label for="add_date_time"><i class="fa-solid fa-clock icon"></i>Date and time (YYYY-MM-DD HH:MM:SS):</label>
+                <input type="text" id="add_date_time" name="add_date_time" placeholder="2024-01-01 12:00:00" required>
+                <label for="add_eurbuy">EUR buy:</label>
+                <input type="number" step="0.0001" id="add_eurbuy" name="add_eurbuy" required>
+                <label for="add_eursell">EUR sell:</label>
+                <input type="number" step="0.0001" id="add_eursell" name="add_eursell" required>
+                <label for="add_usdbuy">USD buy:</label>
+                <input type="number" step="0.0001" id="add_usdbuy" name="add_usdbuy" required>
+                <label for="add_usdsell">USD sell:</label>
+                <input type="number" step="0.0001" id="add_usdsell" name="add_usdsell" required>
+                <button type="submit"><i class="fa-solid fa-plus icon"></i>Add record</button>
+            </form>
+            <div id="add_result"></div>
+        </div>
+        <div class="back-menu" onclick="backToMenu()"><i class="fa-solid fa-arrow-up icon"></i>Back to menu</div>
+        <hr>
+        <div class="stars">&#9733; &#9733; &#9733; &#9733; &#9733;</div>
+        <div style="text-align:center; color:#0077b6; margin-top:10px;">&copy; 2024 Adrian Lesniak</div>
     </div>
 </body>
 </html>
